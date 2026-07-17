@@ -1,0 +1,32 @@
+# CI for xbrl-filer.
+#
+# tsc + unit tests on every PR / push to main. CI runs the PURE test
+# suite only (aggregation, instance XML, calc validator) — no DB, no
+# network. The generateFiling integration suite requires DATABASE_URL
+# and self-skips here; run it locally against the shared dev DB.
+
+name: CI
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - name: Install dependencies
+        run: npm ci
+      - name: Generate Prisma client
+        run: npx prisma generate
+      - name: TypeScript check
+        run: npx tsc --noEmit
+      - name: Unit tests
+        run: npx vitest run
